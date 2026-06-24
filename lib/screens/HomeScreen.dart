@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:notes_app_sqflite/Database/locaDataBase/db_helper.dart';
+import 'package:notes_app_sqflite/providers/notes_provider.dart';
 
-class Homescreen extends StatefulWidget {
+class Homescreen extends ConsumerStatefulWidget {
   Homescreen({super.key});
 
   @override
-  State<Homescreen> createState() => _HomescreenState();
+  ConsumerState<Homescreen> createState() => _HomescreenState();
 }
 
-class _HomescreenState extends State<Homescreen> {
-  List<Map<String, dynamic>> Notes = [];
-  DBHelper? dbRef;
+class _HomescreenState extends ConsumerState<Homescreen> {
   @override
   void initState() {
-    dbRef = DBHelper.getInstance;
-    getNotes();
-  }
-
-  void getNotes() async {
-    Notes = await dbRef!.getAllNotes();
-    setState(() {});
+    Future.microtask(() {
+      ref.read(noteProvider.notifier).loadNotes();
+    });
   }
 
   @override
@@ -32,50 +28,49 @@ class _HomescreenState extends State<Homescreen> {
         foregroundColor: Colors.white,
       ),
 
-      body: ListView.builder(
-        itemCount: Notes.length,
-        itemBuilder: (context, index) {
-          final note = Notes[index];
-          return ListTile(
-            leading: Text(note[DBHelper.Table_Coulumn_S_NO].toString()),
-            title: Text(note[DBHelper.Table_Coulumn_Title]),
-            subtitle: Text(note[DBHelper.Table_Coulumn_Description]),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    await dbRef!.updateNote(
-                      title: "Khan",
-                      description: "Football",
-                      id: note["${DBHelper.Table_Coulumn_S_NO}"],
-                    );
-                    getNotes();
-                  },
+      body: Consumer(
+        builder: (context, ref, child) {
+          final notes = ref.watch(noteProvider);
 
-                  child: Icon(Icons.edit, color: Colors.blue),
+          return ListView.builder(
+            itemCount: notes.length,
+            itemBuilder: (context, index) {
+              final note = notes[index];
+              return ListTile(
+                leading: Text(note.title),
+                title: Text(note.description),
+                subtitle: Text("data"),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () async {},
+
+                      child: Icon(Icons.edit, color: Colors.blue),
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        print("Delte Click");
+                        print(note.id!);
+                        await ref
+                            .read(noteProvider.notifier)
+                            .deleteNotes(id: note.id!);
+                      },
+                      child: Icon(Icons.delete, color: Colors.red),
+                    ),
+                  ],
                 ),
-                GestureDetector(
-                  onTap: () async {
-                    await dbRef!.deleteNote(
-                      id: note["${DBHelper.Table_Coulumn_S_NO}"],
-                    );
-                    getNotes();
-                  },
-                  child: Icon(Icons.delete, color: Colors.red),
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await dbRef!.addNote(
-            title: "Raees khan",
-            description: "Home WorkOut ",
-          );
-          getNotes();
+          await ref
+              .read(noteProvider.notifier)
+              .addNotes(title: "Raees Khan", description: "Home Workout ");
+          print("add data ");
         },
       ),
     );

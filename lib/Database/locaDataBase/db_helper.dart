@@ -1,38 +1,38 @@
 import 'dart:io';
 
+import 'package:notes_app_sqflite/model/note_model.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-class DBHelper {
-  DBHelper._();
+class DbHelper {
+  DbHelper._();
 
-  static final DBHelper getInstance = DBHelper._();
+  static DbHelper getinstance = DbHelper._();
+  static String Table_Name = "Notes";
+  static String Table_Coulumn_Title = "title";
+  static String Table_Coulumn_Description = "description";
+  static String Table_Coulumn_S_NO = "S_NO";
 
-  static final String Table_Note = "Note";
-  static final String Table_Coulumn_S_NO = "S_NO";
-  static final String Table_Coulumn_Title = "Title";
-  static final String Table_Coulumn_Description = "Description";
-  // OpenDatabase  first we check path if path exist or not
-  Database? mydb;
+  Database? myDB;
 
-  Future<Database> getDB() async {
-    if (mydb != null) {
-      return mydb!;
+  Future<Database> getDb() async {
+    if (myDB != null) {
+      return myDB!;
     } else {
-      mydb = await openDB();
-      return mydb!;
+      myDB = await openDB();
+      return myDB!;
     }
   }
 
   Future<Database> openDB() async {
     Directory directory = await getApplicationDocumentsDirectory();
-    String dbpath = join(directory.path, "TaskFlow.db");
-    return openDatabase(
-      dbpath,
+    String path = join(directory.path, "myNotes.db");
+    return await openDatabase(
+      path,
       onCreate: (db, version) async {
         await db.execute(
-          "CREATE TABLE $Table_Note($Table_Coulumn_S_NO INTEGER PRIMARY KEY AUTOINCREMENT,$Table_Coulumn_Title TEXT,$Table_Coulumn_Description TEXT )",
+          "Create Table $Table_Name($Table_Coulumn_S_NO INTEGER PRIMARY KEY AUTOINCREMENT,$Table_Coulumn_Title TEXT,$Table_Coulumn_Description TEXT)",
         );
       },
       version: 1,
@@ -43,47 +43,53 @@ class DBHelper {
     required String title,
     required String description,
   }) async {
-    var db = await getDB();
-    int rowEffected = await db.insert(Table_Note, {
-      Table_Coulumn_Title: title,
-
-      Table_Coulumn_Description: description,
-    });
-    return rowEffected > 0;
+    var db = await getDb();
+    int rowsEffected = await db.insert(
+      Table_Name,
+      NoteModel(title: title, description: description).toMap(),
+    );
+    return rowsEffected > 0;
   }
 
-  Future<List<Map<String, dynamic>>> getAllNotes() async {
-    var db = await getDB();
+  Future<List<NoteModel>> fetchingNotes() async {
+    var db = await getDb();
 
-    List<Map<String, dynamic>> AllNotes = await db.query(Table_Note);
-
-    return AllNotes;
+    List<Map<String, dynamic>> result = await db.query(Table_Name);
+    return result.map((map) => NoteModel.fromMap(map)).toList();
   }
 
-  Future<bool> updateNote({
+  // Update Function
+
+  Future<bool> updateNotes({
     required String title,
     required String description,
     required int id,
   }) async {
-    var db = await getDB();
-
-    int rowEffected = await db.update(Table_Note, {
-      Table_Coulumn_Title: title,
-      Table_Coulumn_Description: description,
-      Table_Coulumn_S_NO: id,
-    }, where: "$Table_Coulumn_S_NO=$id");
-
-    return rowEffected > 0;
+    var db = await getDb();
+    int rowsEffected = await db.update(
+      Table_Name,
+      NoteModel(title: title, description: description).toMap(),
+      where: "$Table_Coulumn_S_NO =?",
+      whereArgs: [id],
+    );
+    return rowsEffected > 0;
   }
 
-  Future<bool> deleteNote({required int id}) async {
-    var db = await getDB();
+  // delete Fucntion
+  Future<bool> deleteNote(int id) async {
+    var db = await getDb();
 
-    int rowEffected = await db.delete(
-      Table_Note,
-      where: "$Table_Coulumn_S_NO=$id",
+    print(await db.query(Table_Name));
+    print("Delete ID = $id");
+
+    int rowsEffected = await db.delete(
+      Table_Name,
+      where: "$Table_Coulumn_S_NO = ?",
+      whereArgs: [id],
     );
 
-    return rowEffected > 0;
+    print("Rows Deleted = $rowsEffected");
+
+    return rowsEffected > 0;
   }
 }
