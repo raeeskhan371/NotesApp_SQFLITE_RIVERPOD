@@ -1,20 +1,19 @@
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:notes_app_sqflite/Database/locaDataBase/db_helper.dart';
 import 'package:notes_app_sqflite/model/note_model.dart';
+import 'package:riverpod/legacy.dart';
 
-final noteProvider = StateNotifierProvider<NotesNotifier, List<NoteModel>>((
+final notesProvider = StateNotifierProvider<NotesNotifier, List<NoteModel>>((
   ref,
 ) {
   return NotesNotifier();
 });
 
 class NotesNotifier extends StateNotifier<List<NoteModel>> {
+  var db = DbHelper.getinstance;
   NotesNotifier() : super([]);
 
-  final db = DbHelper.getinstance;
-
-  Future<void> loadNotes() async {
-    final notes = await db.fetchingNotes();
+  Future<void> getAllNotes() async {
+    List<NoteModel> notes = await db.userFetchingNotes();
     state = notes;
   }
 
@@ -22,25 +21,22 @@ class NotesNotifier extends StateNotifier<List<NoteModel>> {
     required String title,
     required String description,
   }) async {
-    await db.addNote(title: title, description: description);
-    await loadNotes();
+    await db.userAddNote(title: title, description: description);
+    await getAllNotes();
   }
 
-  Future<List<NoteModel>> getAllnotes() async {
-    await loadNotes();
-    return await db.fetchingNotes();
-  }
-
-  Future<void> UpdateNotes({
+  Future<void> updateNotes({
     required String title,
     required String description,
     required int id,
   }) async {
-    db.updateNotes(title: title, description: description, id: id);
-    await loadNotes();
+    await db.userUpdateNote(title: title, description: description, id: id);
+
+    await getAllNotes();
   }
 
   Future<void> deleteNotes({required int id}) async {
-    await db.deleteNote(id);
+    await db.userDeleteNote(id: id);
+    await getAllNotes();
   }
 }

@@ -13,8 +13,9 @@ class Homescreen extends ConsumerStatefulWidget {
 class _HomescreenState extends ConsumerState<Homescreen> {
   @override
   void initState() {
+    super.initState();
     Future.microtask(() {
-      ref.read(noteProvider.notifier).loadNotes();
+      ref.read(notesProvider.notifier).getAllNotes();
     });
   }
 
@@ -30,7 +31,7 @@ class _HomescreenState extends ConsumerState<Homescreen> {
 
       body: Consumer(
         builder: (context, ref, child) {
-          final notes = ref.watch(noteProvider);
+          final notes = ref.watch(notesProvider);
 
           return ListView.builder(
             itemCount: notes.length,
@@ -44,16 +45,26 @@ class _HomescreenState extends ConsumerState<Homescreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
-                      onTap: () async {},
+                      onTap: () async {
+                        print("Button Clicked");
+                        print("Note ID: ${note.id}");
+                        await ref
+                            .read(notesProvider.notifier)
+                            .updateNotes(
+                              title: "Raees Khan",
+                              description: "HomeWorkout",
+                              id: note.id!,
+                            );
+                      },
 
                       child: Icon(Icons.edit, color: Colors.blue),
                     ),
                     GestureDetector(
                       onTap: () async {
-                        print("Delte Click");
-                        print(note.id!);
+                        print("Button Clicked");
+                        print("Note ID: ${note.id}");
                         await ref
-                            .read(noteProvider.notifier)
+                            .read(notesProvider.notifier)
                             .deleteNotes(id: note.id!);
                       },
                       child: Icon(Icons.delete, color: Colors.red),
@@ -68,9 +79,8 @@ class _HomescreenState extends ConsumerState<Homescreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await ref
-              .read(noteProvider.notifier)
-              .addNotes(title: "Raees Khan", description: "Home Workout ");
-          print("add data ");
+              .read(notesProvider.notifier)
+              .addNotes(title: "Proffyy", description: "Playing Game");
         },
       ),
     );

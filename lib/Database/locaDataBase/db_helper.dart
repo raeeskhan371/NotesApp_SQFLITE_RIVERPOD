@@ -9,87 +9,85 @@ class DbHelper {
   DbHelper._();
 
   static DbHelper getinstance = DbHelper._();
-  static String Table_Name = "Notes";
-  static String Table_Coulumn_Title = "title";
-  static String Table_Coulumn_Description = "description";
-  static String Table_Coulumn_S_NO = "S_NO";
+  static String Tabel_Note = "Notes";
+  static String Table_Column_id = "id";
+  static String Table_Column_title = "title";
+  static String Table_Column_description = "description";
+  Database? mydb;
 
-  Database? myDB;
+  // get database
 
-  Future<Database> getDb() async {
-    if (myDB != null) {
-      return myDB!;
+  Future<Database> getDB() async {
+    if (mydb != null) {
+      return mydb!;
     } else {
-      myDB = await openDB();
-      return myDB!;
+      mydb = await openDB();
+      return mydb!;
     }
   }
 
   Future<Database> openDB() async {
     Directory directory = await getApplicationDocumentsDirectory();
-    String path = join(directory.path, "myNotes.db");
-    return await openDatabase(
+    String path = join(directory.path, "Notes.db");
+
+    mydb = await openDatabase(
       path,
       onCreate: (db, version) async {
         await db.execute(
-          "Create Table $Table_Name($Table_Coulumn_S_NO INTEGER PRIMARY KEY AUTOINCREMENT,$Table_Coulumn_Title TEXT,$Table_Coulumn_Description TEXT)",
+          'Create Table $Tabel_Note($Table_Column_id INTEGER PRIMARY KEY AUTOINCREMENT,$Table_Column_title TEXT,$Table_Column_description TEXT)',
         );
       },
       version: 1,
     );
+    return mydb!;
   }
 
-  Future<bool> addNote({
+  Future<bool> userAddNote({
     required String title,
     required String description,
   }) async {
-    var db = await getDb();
+    var db = await getDB();
     int rowsEffected = await db.insert(
-      Table_Name,
+      Tabel_Note,
       NoteModel(title: title, description: description).toMap(),
     );
+
     return rowsEffected > 0;
   }
 
-  Future<List<NoteModel>> fetchingNotes() async {
-    var db = await getDb();
+  Future<List<NoteModel>> userFetchingNotes() async {
+    var db = await getDB();
 
-    List<Map<String, dynamic>> result = await db.query(Table_Name);
-    return result.map((map) => NoteModel.fromMap(map)).toList();
+    List<Map<String, dynamic>> result = await db.query(Tabel_Note);
+    return result.map((map) {
+      return NoteModel.fromMap(map);
+    }).toList();
   }
 
-  // Update Function
-
-  Future<bool> updateNotes({
+  Future<bool> userUpdateNote({
     required String title,
     required String description,
     required int id,
   }) async {
-    var db = await getDb();
+    var db = await getDB();
+
     int rowsEffected = await db.update(
-      Table_Name,
-      NoteModel(title: title, description: description).toMap(),
-      where: "$Table_Coulumn_S_NO =?",
+      Tabel_Note,
+      {Table_Column_title: title, Table_Column_description: description},
+
+      where: "$Table_Column_id=?",
       whereArgs: [id],
     );
     return rowsEffected > 0;
   }
 
-  // delete Fucntion
-  Future<bool> deleteNote(int id) async {
-    var db = await getDb();
-
-    print(await db.query(Table_Name));
-    print("Delete ID = $id");
-
+  Future<bool> userDeleteNote({required int id}) async {
+    var db = await getDB();
     int rowsEffected = await db.delete(
-      Table_Name,
-      where: "$Table_Coulumn_S_NO = ?",
+      Tabel_Note,
+      where: "$Table_Column_id=?",
       whereArgs: [id],
     );
-
-    print("Rows Deleted = $rowsEffected");
-
     return rowsEffected > 0;
   }
 }
